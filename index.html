@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>LETS – Avaliações de Experiências</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#F26522"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#E8E4E0;}
+body{font-family:'Nunito',sans-serif;-webkit-font-smoothing:antialiased;}
+:root{
+  --orange:#F26522;--orange-deep:#D4541A;--orange-light:#FFF0E8;--orange-mid:#FFD4B8;
+  --white:#FFFFFF;--bg:#F5F2EF;--card:#FFFFFF;--text:#1A1008;--muted:#9A8A7E;
+  --border:#EDE5DE;--green:#27AE60;--red:#E8453C;
+}
+#app{max-width:480px;margin:0 auto;background:var(--bg);min-height:100vh;position:relative;padding-bottom:80px;box-shadow:0 0 60px rgba(0,0,0,0.12);}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:32px 24px;background:linear-gradient(160deg,#FFF6F0 0%,var(--bg) 100%);
+}
+.auth-logo{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:40px;}
+.auth-logo-icon{background:var(--orange);border-radius:20px;width:72px;height:72px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(242,101,34,0.35);}
+.auth-logo-text{font-family:'Bebas Neue';font-size:42px;color:var(--text);letter-spacing:3px;}
+.auth-tagline{color:var(--muted);font-size:14px;font-weight:600;text-align:center;margin-top:-8px;}
+.auth-card{background:var(--card);border-radius:24px;padding:28px 24px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.08);border:1px solid var(--border);}
+.auth-tabs{display:flex;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:24px;}
+.auth-tab{flex:1;padding:9px 0;border:none;background:transparent;border-radius:9px;cursor:pointer;font-family:'Nunito';font-weight:800;font-size:14px;color:var(--muted);transition:all .2s;}
+.auth-tab.active{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(242,101,34,0.3);}
+.field-label{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px;}
+.field-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Nunito';font-weight:600;font-size:14px;outline:none;margin-bottom:14px;transition:border .2s;}
+.field-input:focus{border-color:var(--orange);}
+.btn-primary{width:100%;padding:14px;background:var(--orange);border:none;border-radius:14px;color:#fff;font-family:'Nunito';font-weight:900;font-size:16px;cursor:pointer;box-shadow:0 4px 16px rgba(242,101,34,0.35);transition:opacity .2s;margin-top:4px;}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+.auth-error{background:#FEE;border:1px solid #FCC;border-radius:10px;padding:10px 14px;color:var(--red);font-size:13px;font-weight:700;margin-bottom:14px;display:none;}
+.auth-success{background:#E8F8EE;border:1px solid #B2EAC8;border-radius:10px;padding:10px 14px;color:var(--green);font-size:13px;font-weight:700;margin-bottom:14px;display:none;}
+
+/* ── TOP BAR ── */
+#topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.93);backdrop-filter:blur(14px);padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:8px;}
+.logo-icon{background:var(--orange);border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
+.logo-text{font-family:'Bebas Neue';font-size:28px;color:var(--text);letter-spacing:2px;}
+.top-right{display:flex;gap:8px;align-items:center;}
+#pts-badge{background:var(--orange-light);border-radius:20px;padding:5px 12px;font-family:'Bebas Neue';color:var(--orange);font-size:14px;letter-spacing:1px;cursor:default;}
+#btn-new{background:var(--orange);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(242,101,34,0.4);line-height:1;transition:transform .15s;}
+#btn-new:active{transform:scale(.9);}
+
+/* ── PAGE ── */
+#page{padding:18px 14px 0;}
+.tab-section{display:none;}
+.tab-section.active{display:block;}
+
+/* ── BOTTOM NAV ── */
+#bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,0.97);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0 16px;z-index:100;}
+.nav-btn{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);transition:color .2s;padding:0 8px;font-family:'Nunito';font-size:10px;font-weight:800;letter-spacing:.3px;}
+.nav-btn.active{color:var(--orange);}
+
+/* ── CARDS / SHARED ── */
+.card{background:var(--card);border-radius:18px;box-shadow:0 2px 16px rgba(242,101,34,0.07);margin-bottom:16px;overflow:hidden;border:1px solid var(--border);}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';color:#fff;flex-shrink:0;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(242,101,34,0.2);}
+.badge{background:var(--orange);color:#fff;font-family:'Bebas Neue';font-size:11px;letter-spacing:1px;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;}
+.stars{display:flex;gap:2px;}
+.tag{background:var(--orange-light);color:var(--orange);font-size:11px;font-weight:700;padding:3px 11px;border-radius:20px;border:1px solid var(--orange-mid);}
+
+/* ── CAROUSEL ── */
+.carousel-wrap{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#111;}
+.carousel-track{display:flex;height:100%;transition:transform .32s cubic-bezier(.4,0,.2,1);}
+.carousel-slide{flex-shrink:0;height:100%;position:relative;}
+.carousel-slide img{width:100%;height:100%;object-fit:cover;display:block;}
+.slide-label{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));padding:24px 14px 12px;color:#fff;font-size:13px;font-weight:700;}
+.carousel-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2);color:var(--text);}
+.carousel-btn.prev{left:10px;} .carousel-btn.next{right:10px;}
+.carousel-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;}
+.dot{height:6px;border-radius:3px;background:rgba(255,255,255,.6);cursor:pointer;transition:all .2s;width:6px;}
+.dot.active{background:var(--orange);width:18px;}
+.carousel-count{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:20px;}
+
+/* ── POST ── */
+.card-header{padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.post-rest{font-family:'Bebas Neue';color:var(--orange);font-size:15px;letter-spacing:.5px;}
+.post-loc{color:var(--muted);font-size:11px;margin-top:1px;}
+.post-tags{padding:10px 14px 0;display:flex;gap:6px;flex-wrap:wrap;}
+.post-text{padding:8px 14px 0;color:var(--text);font-size:13.5px;line-height:1.55;}
+.post-actions{padding:12px 14px;display:flex;gap:16px;align-items:center;border-top:1px solid var(--border);margin-top:12px;}
+.action-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--muted);font-family:'Nunito';font-weight:700;font-size:13px;transition:color .2s;}
+.action-btn.liked{color:var(--red);}
+.pts-earn{margin-left:auto;color:var(--green);font-weight:700;font-size:12px;}
+
+/* ── STORIES ── */
+.stories-bar{display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;scrollbar-width:none;}
+.stories-bar::-webkit-scrollbar{display:none;}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;cursor:pointer;}
+.story-ring{padding:2.5px;border-radius:50%;background:linear-gradient(135deg,var(--orange) 0%,var(--orange-deep) 100%);}
+.story-ring.me{background:var(--border);}
+.story-name{font-size:11px;color:var(--text);font-weight:700;max-width:54px;text-align:center;}
+
+/* ── FRIENDS ── */
+.search-input{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:30px;padding:11px 18px;color:var(--text);font-family:'Nunito';font-weight:600;font-size:14px;outline:none;margin-bottom:16px;}
+.search-input:focus{border-color:var(--orange);}
+.stats-row{display:flex;gap:10px;margin-bottom:16px;}
+.stat-box{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 0;text-align:center;}
+.stat-num{font-family:'Bebas Neue';font-size:24px;color:var(--orange);}
+.stat-lbl{font-size:12px;color:var(--muted);font-weight:600;}
+.friend-card{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,.04);}
+.follow-btn{padding:7px 16px;border-radius:20px;cursor:pointer;font-family:'Nunito';font-weight:800;font-size:13px;transition:all .2s;border:2px solid var(--orange);background:var(--orange);color:#fff;}
+.follow-btn.following{background:transparent;border-color:var(--border);color:var(--muted);}
+
+/* ── REWARDS ── */
+.pts-card{background:linear-gradient(135deg,var(--orange) 0%,var(--orange-deep) 100%);border-radius:20px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden;}
+.pts-card-deco{position:absolute;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none;}
+.progress-bg{background:rgba(255,255,255,.25);border-radius:10px;height:8px;}
+.progress-fill{height:100%;background:#fff;border-radius:10px;transition:width .6s;}
+.earn-card{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:16px;margin-bottom:20px;}
+.earn-row{display:flex;align-items:center;gap:12px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border);}
+.voucher-card{background:var(--card);border-radius:16px;border:1.5px solid var(--border);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.voucher-card.avail{border-color:var(--orange-mid);}
+.voucher-icon{width:48px;height:48px;border-radius:14px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.redeem-btn{padding:8px 14px;border-radius:20px;border:none;cursor:pointer;font-family:'Nunito';font-weight:800;font-size:12px;white-space:nowrap;background:var(--bg);color:var(--muted);}
+.redeem-btn.can{background:var(--orange);color:#fff;}
+
+/* ── PROFILE ── */
+.profile-header{background:linear-gradient(160deg,var(--orange) 0%,var(--orange-deep) 100%);border-radius:20px;padding:24px 20px 20px;margin-bottom:20px;position:relative;overflow:hidden;}
+.profile-av{width:68px;height:68px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';color:var(--orange);font-size:22px;border:3px solid rgba(255,255,255,.5);box-shadow:0 4px 16px rgba(0,0,0,.15);flex-shrink:0;}
+.profile-stats{display:flex;margin-top:16px;}
+.pstat{flex:1;text-align:center;}
+.pstat+.pstat{border-left:1px solid rgba(255,255,255,.25);}
+.toggle-row{display:flex;gap:8px;margin-bottom:20px;}
+.toggle-btn{flex:1;padding:11px 0;border-radius:12px;cursor:pointer;font-family:'Nunito';font-weight:800;font-size:14px;transition:all .2s;background:var(--card);color:var(--muted);border:2px solid var(--border);}
+.toggle-btn.active{background:var(--orange);color:#fff;border-color:var(--orange);}
+.history-card{background:var(--card);border-radius:16px;border:1px solid var(--border);margin-bottom:10px;overflow:hidden;display:flex;align-items:center;}
+.history-card img{width:76px;height:68px;object-fit:cover;flex-shrink:0;}
+.top5-card{background:var(--card);border-radius:16px;border:2px solid var(--border);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.top5-card.first{border-color:var(--orange);box-shadow:0 4px 20px rgba(242,101,34,.18);}
+.rank-circle{width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';color:var(--muted);font-size:20px;flex-shrink:0;}
+.rank-circle.first{background:var(--orange);color:#fff;}
+
+/* ── MODAL ── */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,16,8,.65);z-index:300;align-items:flex-end;backdrop-filter:blur(4px);}
+#modal-overlay.open{display:flex;}
+#modal-box{background:#fff;width:100%;max-width:480px;margin:0 auto;border-radius:24px 24px 0 0;padding:24px 20px 32px;max-height:90vh;overflow-y:auto;}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 20px;}
+.modal-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Nunito';font-weight:600;font-size:14px;outline:none;margin-bottom:14px;}
+.modal-input:focus{border-color:var(--orange);}
+.modal-stars{display:flex;gap:6px;margin-bottom:16px;}
+.modal-stars svg{cursor:pointer;transition:transform .1s;}
+.modal-stars svg:hover{transform:scale(1.15);}
+
+/* ── LOADING / EMPTY ── */
+.loading-spinner{display:flex;justify-content:center;padding:40px 0;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-state p{font-weight:700;font-size:15px;}
+.empty-state small{font-size:13px;}
+
+/* ── FILE UPLOAD ── */
+.upload-area{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;margin-bottom:14px;transition:border .2s;}
+.upload-area:hover{border-color:var(--orange);}
+.upload-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.upload-preview img{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);}
+.upload-preview .remove-img{position:relative;}
+.upload-preview .remove-img::after{content:'×';position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;width:18px;height:18px;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 20px;border-radius:20px;font-family:'Nunito';font-weight:700;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="#fff">
+        <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+      </svg>
+    </div>
+    <span class="auth-logo-text">LETS</span>
+    <span class="auth-tagline">Avalie. Compartilhe. Descubra.</span>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="setAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="setAuthTab('signup')">Criar conta</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <div id="auth-success" class="auth-success"></div>
+
+    <div id="signup-name-wrap" style="display:none">
+      <div class="field-label">NOME COMPLETO</div>
+      <input class="field-input" id="signup-name" type="text" placeholder="Seu nome"/>
+    </div>
+    <div class="field-label">E-MAIL</div>
+    <input class="field-input" id="auth-email" type="email" placeholder="seu@email.com"/>
+    <div class="field-label">SENHA</div>
+    <input class="field-input" id="auth-password" type="password" placeholder="••••••••"/>
+    <button class="btn-primary" id="auth-btn" onclick="handleAuth()">Entrar</button>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until login) -->
+<div id="main-app" style="display:none">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+          <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+        </svg>
+      </div>
+      <span class="logo-text">LETS</span>
+    </div>
+    <div class="top-right">
+      <div id="pts-badge">★ 0 pts</div>
+      <button id="btn-new" onclick="openModal()">+</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="page">
+    <div id="tab-feed" class="tab-section active">
+      <div class="stories-bar" id="stories-bar"></div>
+      <div id="posts-container"><div class="loading-spinner"><div class="spinner"></div></div></div>
+    </div>
+    <div id="tab-friends" class="tab-section">
+      <input class="search-input" id="friends-search" placeholder="🔍  Buscar pessoas..." oninput="renderFriends()"/>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="following-count">0</div><div class="stat-lbl">Seguindo</div></div>
+        <div class="stat-box"><div class="stat-num" id="suggest-count">0</div><div class="stat-lbl">Sugestões</div></div>
+      </div>
+      <div id="friends-list"><div class="loading-spinner"><div class="spinner"></div></div></div>
+    </div>
+    <div id="tab-rewards" class="tab-section">
+      <div class="pts-card">
+        <div class="pts-card-deco" style="top:-30px;right:-30px;width:130px;height:130px"></div>
+        <div class="pts-card-deco" style="bottom:-40px;left:60px;width:100px;height:100px"></div>
+        <div style="color:rgba(255,255,255,.85);font-size:13px;font-weight:700;position:relative">SEUS PONTOS LETS</div>
+        <div id="reward-pts" style="font-family:'Bebas Neue';color:#fff;font-size:56px;line-height:1;margin-top:4px;position:relative">0</div>
+        <div style="margin-top:16px;position:relative">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;color:rgba(255,255,255,.85);font-size:12px;font-weight:700">
+            <span>Próximo nível: Explorer</span><span id="reward-pct">0%</span>
+          </div>
+          <div class="progress-bg"><div class="progress-fill" id="reward-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="earn-card">
+        <div style="font-family:'Bebas Neue';font-size:18px;color:var(--text);margin-bottom:12px;letter-spacing:.5px">COMO GANHAR PONTOS</div>
+        <div class="earn-row"><span style="font-size:20px">✍️</span><span style="flex:1;font-weight:700;color:var(--text);font-size:13px">Avaliar um restaurante</span><span style="font-family:'Bebas Neue';color:var(--green);font-size:15px">+50 pts</span></div>
+        <div class="earn-row"><span style="font-size:20px">📸</span><span style="flex:1;font-weight:700;color:var(--text);font-size:13px">Publicar com fotos</span><span style="font-family:'Bebas Neue';color:var(--green);font-size:15px">+30 pts</span></div>
+        <div class="earn-row"><span style="font-size:20px">❤️</span><span style="flex:1;font-weight:700;color:var(--text);font-size:13px">Receber curtidas</span><span style="font-family:'Bebas Neue';color:var(--green);font-size:15px">+5 pts/cada</span></div>
+        <div class="earn-row"><span style="font-size:20px">👥</span><span style="flex:1;font-weight:700;color:var(--text);font-size:13px">Indicar um amigo</span><span style="font-family:'Bebas Neue';color:var(--green);font-size:15px">+100 pts</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="font-size:20px">🏆</span><span style="flex:1;font-weight:700;color:var(--text);font-size:13px">Avaliação em destaque</span><span style="font-family:'Bebas Neue';color:var(--green);font-size:15px">+200 pts</span></div>
+      </div>
+      <div style="font-family:'Bebas Neue';font-size:18px;color:var(--text);margin-bottom:12px;letter-spacing:.5px">RESGATAR VOUCHERS</div>
+      <div id="vouchers-list"></div>
+    </div>
+    <div id="tab-profile" class="tab-section">
+      <div class="profile-header">
+        <div class="pts-card-deco" style="top:-40px;right:-40px;width:160px;height:160px"></div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <div class="profile-av" id="profile-av-text">?</div>
+          <div>
+            <div style="font-family:'Bebas Neue';color:#fff;font-size:26px;letter-spacing:.5px" id="profile-name-text">—</div>
+            <div style="color:rgba(255,255,255,.85);font-size:12px;font-weight:700" id="profile-email-text">—</div>
+            <div style="margin-top:6px"><span class="badge" id="profile-pts-badge">★ 0 pts</span></div>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="pstat"><div style="font-family:'Bebas Neue';color:#fff;font-size:28px" id="stat-reviews">0</div><div style="color:rgba(255,255,255,.8);font-size:11px;font-weight:700">Avaliações</div></div>
+          <div class="pstat"><div style="font-family:'Bebas Neue';color:#fff;font-size:28px" id="stat-following">0</div><div style="color:rgba(255,255,255,.8);font-size:11px;font-weight:700">Seguindo</div></div>
+          <div class="pstat"><div style="font-family:'Bebas Neue';color:#fff;font-size:28px" id="stat-followers">0</div><div style="color:rgba(255,255,255,.8);font-size:11px;font-weight:700">Seguidores</div></div>
+        </div>
+        <button onclick="logout()" style="margin-top:16px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 20px;border-radius:20px;font-family:'Nunito';font-weight:700;font-size:13px;cursor:pointer;position:relative">Sair da conta</button>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="switchProfile('historico',this)">Histórico</button>
+        <button class="toggle-btn" onclick="switchProfile('top5',this)">Top 5</button>
+      </div>
+      <div id="profile-historico"></div>
+      <div id="profile-top5" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-feed" onclick="switchTab('feed')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Feed
+    </button>
+    <button class="nav-btn" id="nav-friends" onclick="switchTab('friends')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Amigos
+    </button>
+    <button class="nav-btn" id="nav-rewards" onclick="switchTab('rewards')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      Recompensas
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="switchTab('profile')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Perfil
+    </button>
+  </nav>
+</div><!-- /main-app -->
+
+<!-- NEW REVIEW MODAL -->
+<div id="modal-overlay" onclick="closeModalOutside(event)">
+  <div id="modal-box">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:'Bebas Neue';font-size:24px;color:var(--text);letter-spacing:.5px">NOVA AVALIAÇÃO</div>
+      <span style="color:var(--orange);font-size:12px;font-weight:800">+50 pts ao publicar</span>
+    </div>
+    <div class="field-label">RESTAURANTE / LOCAL</div>
+    <input class="modal-input" id="m-restaurant" placeholder="Nome do restaurante..."/>
+    <div class="field-label">BAIRRO / CIDADE</div>
+    <input class="modal-input" id="m-location" placeholder="Ex: Centro · Campinas – SP"/>
+    <div class="field-label">CATEGORIA</div>
+    <input class="modal-input" id="m-tags" placeholder="Ex: Italiano, Casual (separe por vírgula)"/>
+    <div class="field-label" style="margin-bottom:8px">SUA NOTA</div>
+    <div class="modal-stars" id="modal-stars"></div>
+    <div class="field-label">CONTA SUA EXPERIÊNCIA</div>
+    <textarea class="modal-input" id="m-text" placeholder="O que você achou?" style="resize:none;height:90px;margin-bottom:14px"></textarea>
+    <div class="field-label">FOTOS (opcional)</div>
+    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+      <span style="font-size:28px">📷</span>
+      <div style="font-weight:700;color:var(--text);margin-top:6px;font-size:14px">Toque para adicionar fotos</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:2px">JPG ou PNG · até 5 fotos</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(event)"/>
+    <div class="upload-preview" id="upload-preview"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeModal()" style="flex:1;padding:13px;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;color:var(--muted);font-family:'Nunito';font-weight:700;font-size:14px;cursor:pointer">Cancelar</button>
+      <button id="submit-btn" onclick="submitReview()" style="flex:2;padding:13px;background:var(--orange);border:none;border-radius:14px;color:#fff;font-family:'Nunito';font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 4px 16px rgba(242,101,34,.35)">Publicar Avaliação</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// ⚙️  CONFIGURAÇÃO SUPABASE — substitua pelos seus dados
+// ════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://pfbqqrqyufemgakxzoxo.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_IOzcHIUVk...';
+// ════════════════════════════════════════════════════════
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let allUsers = [];
+const carousels = {};
+let modalRating = 0;
+let uploadedFiles = [];
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+let authMode = 'login';
+function setAuthTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i)=> t.classList.toggle('active', (i===0&&mode==='login')||(i===1&&mode==='signup')));
+  document.getElementById('signup-name-wrap').style.display = mode==='signup'?'block':'none';
+  document.getElementById('auth-btn').textContent = mode==='login'?'Entrar':'Criar conta';
+  clearAuthMessages();
+}
+
+function showAuthError(msg){ const el=document.getElementById('auth-error'); el.textContent=msg; el.style.display='block'; document.getElementById('auth-success').style.display='none'; }
+function showAuthSuccess(msg){ const el=document.getElementById('auth-success'); el.textContent=msg; el.style.display='block'; document.getElementById('auth-error').style.display='none'; }
+function clearAuthMessages(){ document.getElementById('auth-error').style.display='none'; document.getElementById('auth-success').style.display='none'; }
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('auth-btn');
+  if (!email||!password){ showAuthError('Preencha e-mail e senha.'); return; }
+  btn.disabled = true; btn.textContent = '...';
+  clearAuthMessages();
+
+  if (authMode === 'login') {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { showAuthError('E-mail ou senha incorretos.'); btn.disabled=false; btn.textContent='Entrar'; }
+  } else {
+    const name = document.getElementById('signup-name').value.trim();
+    if (!name){ showAuthError('Digite seu nome.'); btn.disabled=false; btn.textContent='Criar conta'; return; }
+    const { error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name: name } } });
+    if (error) { showAuthError(error.message); btn.disabled=false; btn.textContent='Criar conta'; }
+    else { showAuthSuccess('Conta criada! Verifique seu e-mail para confirmar.'); btn.disabled=false; btn.textContent='Criar conta'; }
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    currentUser = session.user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    await loadProfile();
+    await Promise.all([loadFeed(), loadAllUsers()]);
+    renderVouchers();
+    renderModalStars();
+  }
+});
+
+// ── PROFILE ───────────────────────────────────────────────────────────────────
+async function loadProfile() {
+  // upsert profile row
+  const meta = currentUser.user_metadata;
+  const name = meta?.full_name || currentUser.email.split('@')[0];
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3);
+
+  await sb.from('profiles').upsert({ id: currentUser.id, full_name: name, initials, points: 0 }, { onConflict: 'id', ignoreDuplicates: true });
+
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+
+  // UI
+  document.getElementById('profile-av-text').textContent = data.initials || initials;
+  document.getElementById('profile-name-text').textContent = data.full_name || name;
+  document.getElementById('profile-email-text').textContent = currentUser.email;
+  const pts = data.points || 0;
+  document.getElementById('pts-badge').textContent = `★ ${pts.toLocaleString('pt-BR')} pts`;
+  document.getElementById('profile-pts-badge').textContent = `★ ${pts.toLocaleString('pt-BR')} pts`;
+  document.getElementById('reward-pts').textContent = pts.toLocaleString('pt-BR');
+  const pct = Math.min(100, Math.round((pts % 500) / 500 * 100));
+  document.getElementById('reward-pct').textContent = pct + '%';
+  document.getElementById('reward-bar').style.width = pct + '%';
+
+  // stats
+  const { count: reviewCount } = await sb.from('reviews').select('id', {count:'exact',head:true}).eq('user_id', currentUser.id);
+  const { count: followingCount } = await sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', currentUser.id);
+  const { count: followersCount } = await sb.from('follows').select('id', {count:'exact',head:true}).eq('following_id', currentUser.id);
+  document.getElementById('stat-reviews').textContent = reviewCount||0;
+  document.getElementById('stat-following').textContent = followingCount||0;
+  document.getElementById('stat-followers').textContent = followersCount||0;
+
+  renderProfileHistory();
+  renderProfileTop5();
+  renderStoriesBar();
+}
+
+async function renderProfileHistory() {
+  const { data } = await sb.from('reviews').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false}).limit(20);
+  const el = document.getElementById('profile-historico');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽️</div><p>Nenhuma avaliação ainda</p><small>Publique sua primeira avaliação!</small></div>'; return; }
+  el.innerHTML = data.map(r => {
+    const img = r.photos?.[0] || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&q=80';
+    return `<div class="history-card">
+      <img src="${img}" alt="${r.restaurant}" loading="lazy"/>
+      <div style="padding:0 14px;flex:1">
+        <div style="font-weight:800;color:var(--text);font-size:14px">${r.restaurant}</div>
+        <div class="stars">${starsHTML(r.rating,12)}</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:3px">${new Date(r.created_at).toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}</div>
+      </div>
+      <div style="padding:0 14px;color:var(--muted)">›</div>
+    </div>`;
+  }).join('');
+}
+
+async function renderProfileTop5() {
+  const { data } = await sb.from('reviews').select('restaurant, rating').eq('user_id', currentUser.id);
+  const el = document.getElementById('profile-top5');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div><p>Seu Top 5 aparece aqui</p><small>Faça pelo menos 5 avaliações</small></div>'; return; }
+  const map = {};
+  data.forEach(r => { if (!map[r.restaurant]) map[r.restaurant]={sum:0,count:0}; map[r.restaurant].sum+=r.rating; map[r.restaurant].count++; });
+  const sorted = Object.entries(map).map(([name,v])=>({name, avg: v.sum/v.count, count: v.count})).sort((a,b)=>b.avg-a.avg||b.count-a.count).slice(0,5);
+  el.innerHTML = sorted.map((r,i)=>`
+    <div class="top5-card${i===0?' first':''}">
+      <div class="rank-circle${i===0?' first':''}">${i+1}</div>
+      <div style="flex:1">
+        <div style="font-weight:800;color:var(--text);font-size:15px">${r.name}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+          <div class="stars">${starsHTML(Math.round(r.avg),12)}</div>
+          <span style="color:var(--muted);font-size:12px">· ${r.count}x visitado</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── FEED ──────────────────────────────────────────────────────────────────────
+async function loadFeed() {
+  const container = document.getElementById('posts-container');
+  container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+  const { data, error } = await sb.from('reviews')
+    .select('*, profiles(full_name, initials, points)')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error || !data?.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽️</div><p>Nenhuma avaliação ainda</p><small>Seja o primeiro a avaliar!</small></div>';
+    return;
+  }
+  container.innerHTML = data.map(p => buildPostHTML(p)).join('');
+  data.forEach(p => { carousels[p.id] = 0; if (p.photos?.length > 1) updateCarousel(p.id); });
+  // load likes state
+  await loadLikesState(data.map(p=>p.id));
+}
+
+async function loadLikesState(ids) {
+  if (!ids.length) return;
+  const { data } = await sb.from('likes').select('review_id').eq('user_id', currentUser.id).in('review_id', ids);
+  (data||[]).forEach(l => {
+    const btn = document.getElementById(`like-btn-${l.review_id}`);
+    if (btn) { btn.classList.add('liked'); btn.querySelector('svg').setAttribute('fill','#E8453C'); }
+  });
+}
+
+function buildPostHTML(p) {
+  const profile = p.profiles || {};
+  const name = profile.full_name || 'Usuário';
+  const initials = profile.initials || name[0].toUpperCase();
+  const pts = profile.points || 0;
+  const photos = p.photos || [];
+  const n = photos.length;
+  const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+  const dateStr = new Date(p.created_at).toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
+  const avatarColor = `hsl(${(initials.charCodeAt(0)*17%30)+20},65%,50%)`;
+
+  let mediaHTML = '';
+  if (n > 0) {
+    const slides = photos.map((src,i)=>`<div class="carousel-slide" style="width:${100/n}%"><img src="${src}" loading="lazy"/></div>`).join('');
+    const dots = n > 1 ? photos.map((_,i)=>`<div class="dot${i===0?' active':''}" onclick="slideTo('${p.id}',${i})"></div>`).join('') : '';
+    mediaHTML = `<div class="carousel-wrap" id="carousel-${p.id}" data-count="${n}">
+      <div class="carousel-track" style="width:${n*100}%">${slides}</div>
+      ${n>1?`<button class="carousel-btn prev" onclick="slide('${p.id}',-1)" style="display:none">‹</button>
+      <button class="carousel-btn next" onclick="slide('${p.id}',1)">›</button>
+      <div class="carousel-dots">${dots}</div>
+      <div class="carousel-count">1/${n}</div>`:''}
+    </div>`;
+  }
+
+  return `<div class="card" id="post-${p.id}">
+    <div class="card-header">
+      <div class="avatar" style="width:42px;height:42px;background:${avatarColor};font-size:16px">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-weight:800;color:var(--text);font-size:14px">${name}</span>
+          <span class="badge">★ ${pts.toLocaleString('pt-BR')} pts</span>
+        </div>
+        <div class="post-rest">${p.restaurant}</div>
+        <div class="post-loc">📍 ${p.location||''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div class="stars">${starsHTML(p.rating)}</div>
+        <span style="color:var(--muted);font-size:11px">${dateStr}</span>
+      </div>
+    </div>
+    ${mediaHTML}
+    ${tags?`<div class="post-tags">${tags}</div>`:''}
+    <p class="post-text">${p.review_text||''}</p>
+    <div class="post-actions">
+      <button class="action-btn" id="like-btn-${p.id}" onclick="toggleLike('${p.id}')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <span id="likes-count-${p.id}">${p.likes_count||0}</span>
+      </button>
+      <span class="pts-earn">+50 pts</span>
+    </div>
+  </div>`;
+}
+
+async function toggleLike(reviewId) {
+  const btn = document.getElementById(`like-btn-${reviewId}`);
+  const isLiked = btn.classList.contains('liked');
+  const countEl = document.getElementById(`likes-count-${reviewId}`);
+  const current = parseInt(countEl.textContent)||0;
+
+  if (isLiked) {
+    await sb.from('likes').delete().eq('user_id', currentUser.id).eq('review_id', reviewId);
+    await sb.from('reviews').update({ likes_count: Math.max(0, current-1) }).eq('id', reviewId);
+    btn.classList.remove('liked'); btn.querySelector('svg').setAttribute('fill','none');
+    countEl.textContent = Math.max(0, current-1);
+  } else {
+    await sb.from('likes').insert({ user_id: currentUser.id, review_id: reviewId });
+    await sb.from('reviews').update({ likes_count: current+1 }).eq('id', reviewId);
+    btn.classList.add('liked'); btn.querySelector('svg').setAttribute('fill','#E8453C');
+    countEl.textContent = current+1;
+  }
+}
+
+// ── STORIES BAR ───────────────────────────────────────────────────────────────
+function renderStoriesBar() {
+  if (!currentProfile) return;
+  const initials = currentProfile.initials || '?';
+  const el = document.getElementById('stories-bar');
+  el.innerHTML = `<div class="story-item"><div class="story-ring me"><div class="avatar" style="width:50px;height:50px;background:var(--orange);font-size:18px">${initials}</div></div><span class="story-name">Você</span></div>`;
+}
+
+// ── FRIENDS ───────────────────────────────────────────────────────────────────
+async function loadAllUsers() {
+  const { data } = await sb.from('profiles').select('*').neq('id', currentUser.id);
+  allUsers = data || [];
+  renderFriends();
+}
+
+async function renderFriends() {
+  const q = (document.getElementById('friends-search')?.value||'').toLowerCase();
+  const { data: followingData } = await sb.from('follows').select('following_id').eq('follower_id', currentUser.id);
+  const followingIds = new Set((followingData||[]).map(f=>f.following_id));
+  const filtered = allUsers.filter(u=> !q || u.full_name?.toLowerCase().includes(q));
+
+  document.getElementById('following-count').textContent = followingIds.size;
+  document.getElementById('suggest-count').textContent = Math.max(0, allUsers.length - followingIds.size);
+
+  const el = document.getElementById('friends-list');
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado</p></div>'; return; }
+
+  const avatarColor = (initials) => `hsl(${(initials.charCodeAt(0)*17%30)+20},65%,50%)`;
+  el.innerHTML = filtered.map(u=>{
+    const isFollowing = followingIds.has(u.id);
+    return `<div class="friend-card">
+      <div class="avatar" style="width:48px;height:48px;background:${avatarColor(u.initials||'U')};font-size:17px">${u.initials||'U'}</div>
+      <div style="flex:1">
+        <div style="font-weight:800;color:var(--text);font-size:14px">${u.full_name||'Usuário'}</div>
+        <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
+          <span class="badge">★ ${(u.points||0).toLocaleString('pt-BR')} pts</span>
+        </div>
+      </div>
+      <button class="follow-btn${isFollowing?' following':''}" onclick="toggleFollow('${u.id}',this)">
+        ${isFollowing?'Seguindo':'Seguir'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleFollow(userId, btn) {
+  const isFollowing = btn.classList.contains('following');
+  if (isFollowing) {
+    await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', userId);
+    btn.classList.remove('following'); btn.textContent = 'Seguir';
+    btn.style.background='var(--orange)'; btn.style.color='#fff'; btn.style.borderColor='var(--orange)';
+  } else {
+    await sb.from('follows').insert({ follower_id: currentUser.id, following_id: userId });
+    btn.classList.add('following'); btn.textContent = 'Seguindo';
+    btn.style.background='transparent'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)';
+  }
+  await loadProfile();
+}
+
+// ── VOUCHERS ──────────────────────────────────────────────────────────────────
+function renderVouchers() {
+  const pts = currentProfile?.points || 0;
+  const VOUCHERS = [
+    {name:"15% off no Abbraccio",required:500,icon:"🍝"},
+    {name:"Sobremesa grátis – Casa Cookie",required:300,icon:"🍪"},
+    {name:"Entrada grátis – Cardeais",required:800,icon:"🥗"},
+    {name:"Combo Sushi – Sakura",required:1000,icon:"🍱"},
+  ];
+  document.getElementById('vouchers-list').innerHTML = VOUCHERS.map(v=>{
+    const can = pts >= v.required;
+    return `<div class="voucher-card${can?' avail':''}" style="${can?'':'opacity:.55'}">
+      <div class="voucher-icon${can?' '+''}style="background:${can?'var(--orange-light)':'var(--bg)'}">${v.icon}</div>
+      <div style="flex:1">
+        <div style="font-weight:800;color:var(--text);font-size:14px">${v.name}</div>
+        <div style="font-family:'Bebas Neue';color:var(--orange);font-size:16px;margin-top:2px">${v.required.toLocaleString('pt-BR')} pontos</div>
+      </div>
+      <button class="redeem-btn${can?' can':''}" ${!can?'disabled':''} onclick="${can?`showToast('Voucher resgatado! 🎉')`:''}">
+        ${can?'Resgatar':'Falta '+(v.required-pts)+' pts'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ── SUBMIT REVIEW ─────────────────────────────────────────────────────────────
+async function submitReview() {
+  const restaurant = document.getElementById('m-restaurant').value.trim();
+  const location = document.getElementById('m-location').value.trim();
+  const text = document.getElementById('m-text').value.trim();
+  const tagsRaw = document.getElementById('m-tags').value;
+  const tags = tagsRaw.split(',').map(t=>t.trim()).filter(Boolean);
+
+  if (!restaurant) { showToast('Informe o nome do restaurante'); return; }
+  if (modalRating === 0) { showToast('Selecione uma nota de 1 a 5'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+
+  // Upload photos
+  let photoUrls = [];
+  for (const file of uploadedFiles) {
+    const ext = file.name.split('.').pop();
+    const path = `${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data: upData, error: upErr } = await sb.storage.from('review-photos').upload(path, file);
+    if (!upErr) {
+      const { data: urlData } = sb.storage.from('review-photos').getPublicUrl(path);
+      photoUrls.push(urlData.publicUrl);
+    }
+  }
+
+  const bonusPts = 50 + (photoUrls.length > 0 ? 30 : 0);
+
+  const { error } = await sb.from('reviews').insert({
+    user_id: currentUser.id,
+    restaurant, location,
+    review_text: text,
+    rating: modalRating,
+    tags,
+    photos: photoUrls,
+    likes_count: 0,
+  });
+
+  if (!error) {
+    // add points
+    await sb.from('profiles').update({ points: (currentProfile.points||0) + bonusPts }).eq('id', currentUser.id);
+    closeModal();
+    showToast(`Avaliação publicada! +${bonusPts} pts 🎉`);
+    await loadProfile();
+    await loadFeed();
+  } else {
+    showToast('Erro ao publicar. Tente novamente.');
+  }
+
+  btn.disabled = false; btn.textContent = 'Publicar Avaliação';
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
+function handleFiles(e) {
+  const files = Array.from(e.target.files).slice(0, 5);
+  uploadedFiles = files;
+  const preview = document.getElementById('upload-preview');
+  preview.innerHTML = '';
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── CAROUSEL ──────────────────────────────────────────────────────────────────
+function slide(id, dir) {
+  const c = document.getElementById(`carousel-${id}`);
+  if (!c) return;
+  const n = parseInt(c.dataset.count);
+  carousels[id] = Math.max(0, Math.min(n-1, (carousels[id]||0)+dir));
+  updateCarousel(id);
+}
+function slideTo(id, idx) { carousels[id]=idx; updateCarousel(id); }
+function updateCarousel(id) {
+  const c = document.getElementById(`carousel-${id}`);
+  if (!c) return;
+  const n = parseInt(c.dataset.count);
+  const idx = carousels[id]||0;
+  c.querySelector('.carousel-track').style.transform = `translateX(-${(idx/n)*100}%)`;
+  const cnt = c.querySelector('.carousel-count'); if(cnt) cnt.textContent=`${idx+1}/${n}`;
+  c.querySelectorAll('.dot').forEach((d,i)=>{ d.className='dot'+(i===idx?' active':''); });
+  const prev=c.querySelector('.carousel-btn.prev'); if(prev) prev.style.display=idx>0?'flex':'none';
+  const next=c.querySelector('.carousel-btn.next'); if(next) next.style.display=idx<n-1?'flex':'none';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function starsHTML(rating, size=14) {
+  return [1,2,3,4,5].map(i=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${i<=rating?'#F26522':'#E8DDD6'}"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`).join('');
+}
+
+function renderModalStars() {
+  document.getElementById('modal-stars').innerHTML = [1,2,3,4,5].map(i=>
+    `<svg width="34" height="34" viewBox="0 0 24 24" fill="${i<=modalRating?'#F26522':'#E8DDD6'}"
+      onmouseover="hoverStar(${i})" onmouseout="hoverStar(0)" onclick="setStar(${i})">
+      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`
+  ).join('');
+}
+function hoverStar(i) { document.querySelectorAll('#modal-stars svg').forEach((s,idx)=>s.setAttribute('fill',idx<(i||modalRating)?'#F26522':'#E8DDD6')); }
+function setStar(i) { modalRating=i; renderModalStars(); }
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`nav-${tab}`).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if (tab==='friends') renderFriends();
+  if (tab==='rewards') renderVouchers();
+}
+
+function switchProfile(section, btn) {
+  document.getElementById('profile-historico').style.display=section==='historico'?'block':'none';
+  document.getElementById('profile-top5').style.display=section==='top5'?'block':'none';
+  document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function openModal() {
+  modalRating=0; uploadedFiles=[];
+  document.getElementById('m-restaurant').value='';
+  document.getElementById('m-location').value='';
+  document.getElementById('m-tags').value='';
+  document.getElementById('m-text').value='';
+  document.getElementById('upload-preview').innerHTML='';
+  renderModalStars();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOutside(e) { if(e.target===document.getElementById('modal-overlay')) closeModal(); }
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
