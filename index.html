@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#F26522"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;background:#E8E4E0;}
@@ -351,7 +351,7 @@ body{font-family:'Nunito',sans-serif;-webkit-font-smoothing:antialiased;}
 // ⚙️  CONFIGURAÇÃO SUPABASE — substitua pelos seus dados
 // ════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://pfbqqrqyufemgakxzoxo.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmYnFxcnF5dWZlbWdha3h6b3hvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2ODk5NjMsImV4cCI6MjA5MTI2NTk2M30.oy1d3BPUJPKBBgl_Abzv61Yv2wpPrYbkdmsrkYPGrxs';
+const SUPABASE_ANON_KEY = 'sb_publishable_IOzcHIUVk...';
 // ════════════════════════════════════════════════════════
 
 const { createClient } = supabase;
@@ -664,7 +664,7 @@ function renderVouchers() {
   document.getElementById('vouchers-list').innerHTML = VOUCHERS.map(v=>{
     const can = pts >= v.required;
     return `<div class="voucher-card${can?' avail':''}" style="${can?'':'opacity:.55'}">
-      <div class="voucher-icon${can?' '+''}style="background:${can?'var(--orange-light)':'var(--bg)'}">${v.icon}</div>
+      <div class="voucher-icon" style="background:${can?'var(--orange-light)':'var(--bg)'}">${v.icon}</div>
       <div style="flex:1">
         <div style="font-weight:800;color:var(--text);font-size:14px">${v.name}</div>
         <div style="font-family:'Bebas Neue';color:var(--orange);font-size:16px;margin-top:2px">${v.required.toLocaleString('pt-BR')} pontos</div>
